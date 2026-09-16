@@ -10,86 +10,64 @@ char pass[] = "18bakir_349";
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
 
+#define relay1 0
+#define relay2 16
 
-#define K1 0
-#define Led 2
-#define K2 16
 unsigned long DELAY = 1000; 
-unsigned long time1 =0;
-bool LED = false;
+unsigned long timer =0;
 int state = 0;
+bool relay1State = false;
+bool relay2State = false;
+
+bool delay_ms(unsigned long DELAY);
+
 
 void setup() {
-  Serial.begin(115200);
 
-  
-  
-  pinMode(Led, OUTPUT);
-  pinMode(K1, OUTPUT);
-  pinMode(K2, OUTPUT);
-  digitalWrite(Led, LOW);
-  digitalWrite(K1, HIGH);
-  digitalWrite(K2, HIGH);
-  
-  
+  pinMode(relay1, OUTPUT);
+  pinMode(relay2, OUTPUT);
   Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
-  Blynk.virtualWrite(V4,LOW);
-  Blynk.virtualWrite(V0,LOW);
-  Blynk.virtualWrite(V1,LOW);
-  Blynk.virtualWrite(V2,1000);
 }
 
 void loop() {
   Blynk.run();
-  if(state==0){
-    if(millis() - time1 >= DELAY){
-      time1 = millis();
-      LED = !LED;
-      digitalWrite(K1,LED);
-      digitalWrite(K2,!LED);
-    }
-  }
-  else
-    digitalWrite(Led,false);
+
+
+
+  digitalWrite(relay1,relay1State);
+  Blynk.virtualWrite(V0,relay1State);
+
+  digitalWrite(relay2,relay2State);
+  Blynk.virtualWrite(V1,relay2State);
+
+  Blynk.virtualWrite(V2,DELAY);
 }
 
-
-BLYNK_WRITE(V0) {
-  int value = param.asInt(); 
-  if(value==1){
-    Blynk.virtualWrite(V1,LOW);
-    digitalWrite(K2, !LOW);
-    if(state==1){
-      digitalWrite(K1, !value);
-    }
-  }
-  else
-    digitalWrite(K1, !value);
+BLYNK_WRITE(V0){
+  relay1State = param.asInt();
 }
 
-BLYNK_WRITE(V1) {
-  int value1 = param.asInt(); 
-  if(value1==1){
-    Blynk.virtualWrite(V0,LOW);
-    digitalWrite(K1, !LOW);
-    if(state==1){
-      digitalWrite(K2, !value1);
-    }
-  }
-  else
-     digitalWrite(K2, !value1);
+BLYNK_WRITE(V1){
+  relay2State = param.asInt();
 }
 
-BLYNK_WRITE(V2) {
+BLYNK_WRITE(V2){
   DELAY = param.asInt();
 }
 
-BLYNK_WRITE(V4) {
+BLYNK_WRITE(V4){
   state = param.asInt();
-  if(state==1){
-    digitalWrite(K1, HIGH);
-    digitalWrite(K2, HIGH);
-    Blynk.virtualWrite(V0,LOW);
-    Blynk.virtualWrite(V1,LOW);
+}
+
+bool delay_ms(unsigned long u32_delay){
+  if(u32_delay<1000){
+    u32_delay=1000;
+  }
+  if(millis()-timer >=u32_delay){
+    timer=millis();
+    return true;
+  }
+  else{
+    return false;
   }
 }
